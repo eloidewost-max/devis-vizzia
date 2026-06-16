@@ -56,6 +56,30 @@
   .btn-print{background:var(--black);color:#fff;}
   .btn-print:hover{background:#000;}
   .hint{font-size:11px;color:var(--grey);margin-top:12px;line-height:1.5;}
+  /* ── Sections repliables ── */
+  .toggle-sec{margin-bottom:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .toggle-head{
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+    padding:10px 12px;background:#faf9f7;font-size:12px;font-weight:600;color:#444;user-select:none;
+  }
+  .toggle-head:hover{background:#f3f1ec;}
+  .toggle-head .chev{transition:transform .15s;font-size:11px;color:var(--grey);}
+  .toggle-sec.open .toggle-head .chev{transform:rotate(90deg);}
+  .toggle-body{display:none;padding:12px;}
+  .toggle-sec.open .toggle-body{display:block;}
+  .toggle-body .field:last-child, .toggle-body .row:last-child .field{margin-bottom:0;}
+  .pct-warn{font-size:11.5px;color:#c0392b;margin-top:6px;font-weight:600;display:none;}
+  .pct-warn.show{display:block;}
+  .pct-ok{font-size:11.5px;color:#1e8449;margin-top:6px;font-weight:600;}
+  /* ── Sélecteur de mode ── */
+  .mode-switch{display:flex;gap:4px;background:#f3f1ec;border-radius:9px;padding:4px;margin-bottom:16px;}
+  .mode-switch button{
+    flex:1;border:0;border-radius:6px;padding:8px 6px;font-size:11.5px;font-weight:600;
+    background:transparent;color:#666;cursor:pointer;font-family:inherit;
+  }
+  .mode-switch button.active{background:#fff;color:var(--black);box-shadow:0 1px 2px rgba(0,0,0,.12);}
+  .mode-only-global{}
+  .mode-only-manual{}
   /* ── Aperçu devis ── */
   .preview-wrap{flex:1;display:flex;justify-content:center;}
   .sheet{
@@ -119,37 +143,54 @@
   <!-- ───────── FORMULAIRE ───────── -->
   <div class="panel">
     <h1>Générateur de devis</h1>
-    <p class="sub">Saisis le montant global et les quantités — la répartition 40 / 55 / 5 % et les prix unitaires se calculent seuls.</p>
+    <p class="sub">Saisis le montant global et les quantités — la répartition et les prix unitaires se calculent seuls. La répartition par défaut est 40 / 55 / 5 %.</p>
 
     <div class="field">
       <label>Nom de la commune / client</label>
       <input id="clientName" value="COMMUNE DE …">
     </div>
-    <div class="field">
-      <label>Adresse <span style="color:var(--grey);font-weight:400">(optionnel)</span></label>
-      <textarea id="clientAddr"></textarea>
+
+    <div class="mode-switch">
+      <button id="btnGlobal" class="active" onclick="setMode('global')">Global + répartition</button>
+      <button id="btnManual" onclick="setMode('manual')">Montants manuels</button>
     </div>
-    <div class="row">
-      <div class="field">
-        <label>SIRET / réf. <span style="color:var(--grey);font-weight:400">(optionnel)</span></label>
-        <input id="clientRef" value="">
-      </div>
-      <div class="field">
-        <label>N° TVA <span style="color:var(--grey);font-weight:400">(optionnel)</span></label>
-        <input id="clientTva" value="">
+
+    <!-- Mode GLOBAL : montant + TVA -->
+    <div class="mode-only-global" id="modeGlobalFields">
+      <div class="row">
+        <div class="field">
+          <label>Montant global HT (€)</label>
+          <input id="globalHT" type="number" value="75000" step="any">
+        </div>
+        <div class="field">
+          <label>TVA (%)</label>
+          <input id="tvaRate" type="number" value="20" step="any">
+        </div>
       </div>
     </div>
 
-    <div class="row">
+    <!-- Mode MANUEL : 3 montants + TVA -->
+    <div class="mode-only-manual" id="modeManualFields" style="display:none">
       <div class="field">
-        <label>Montant global HT (€)</label>
-        <input id="globalHT" type="number" value="75000" step="any">
+        <label>Matériel HT (€)</label>
+        <input id="mMat" type="number" value="30000" step="any">
       </div>
       <div class="field">
-        <label>TVA (%)</label>
-        <input id="tvaRate" type="number" value="20" step="any">
+        <label>Plateforme HT (€)</label>
+        <input id="mPlat" type="number" value="41250" step="any">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Maintenance HT (€)</label>
+          <input id="mMaint" type="number" value="3750" step="any">
+        </div>
+        <div class="field">
+          <label>TVA (%)</label>
+          <input id="tvaRateM" type="number" value="20" step="any">
+        </div>
       </div>
     </div>
+
     <div class="row">
       <div class="field">
         <label>Nombre de bornes</label>
@@ -162,6 +203,56 @@
     </div>
 
     <div class="split-preview" id="splitPreview"></div>
+
+    <!-- Toggle : répartition des % (mode global uniquement) -->
+    <div class="toggle-sec mode-only-global" id="secRepartition">
+      <div class="toggle-head" onclick="document.getElementById('secRepartition').classList.toggle('open')">
+        <span>Modifier la répartition (40 / 55 / 5 %)</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="toggle-body">
+        <div class="row">
+          <div class="field">
+            <label>Matériel (%)</label>
+            <input id="pctMat" type="number" value="40" step="any" min="0">
+          </div>
+          <div class="field">
+            <label>Plateforme (%)</label>
+            <input id="pctPlat" type="number" value="55" step="any" min="0">
+          </div>
+          <div class="field">
+            <label>Maint. (%)</label>
+            <input id="pctMaint" type="number" value="5" step="any" min="0">
+          </div>
+        </div>
+        <div class="pct-warn" id="pctWarn"></div>
+        <div class="pct-ok" id="pctOk" style="display:none">Total = 100 %</div>
+      </div>
+    </div>
+
+    <!-- Toggle : infos optionnelles -->
+    <div class="toggle-sec" id="secOptionnel">
+      <div class="toggle-head" onclick="document.getElementById('secOptionnel').classList.toggle('open')">
+        <span>Coordonnées détaillées (optionnel)</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="toggle-body">
+        <div class="field">
+          <label>Adresse</label>
+          <textarea id="clientAddr"></textarea>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>SIRET / réf.</label>
+            <input id="clientRef" value="">
+          </div>
+          <div class="field">
+            <label>N° TVA</label>
+            <input id="clientTva" value="">
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="row">
       <div class="field">
@@ -249,6 +340,7 @@
                 <li>Acquisition des éléments de fixation et d'intégration mécanique</li>
                 <li>Pose et intégration mécanique du dispositif sur infrastructure — travaux initiaux de mise en œuvre</li>
                 <li>Acquisition de <span id="o-descCams"></span> caméras</li>
+                <li>Acquisition des panneaux de ville conformes CNIL et RGPD</li>
                 <li>Intégration et qualification technique du dispositif avant remise à la collectivité</li>
                 <li>Contrôle de conformité et validation de l'équipement avant remise</li>
                 <li>Conditionnement, livraison sur site et documentation patrimoniale des équipements immobilisés</li>
@@ -329,7 +421,16 @@
 </div>
 
 <script>
-  const SHARE = { mat:0.40, plat:0.55, maint:0.05 };
+  let CURRENT_MODE = 'global'; // 'global' | 'manual'
+
+  function setMode(mode){
+    CURRENT_MODE = mode;
+    document.getElementById('btnGlobal').classList.toggle('active', mode==='global');
+    document.getElementById('btnManual').classList.toggle('active', mode==='manual');
+    document.querySelectorAll('.mode-only-global').forEach(el=> el.style.display = (mode==='global') ? '' : 'none');
+    document.querySelectorAll('.mode-only-manual').forEach(el=> el.style.display = (mode==='manual') ? '' : 'none');
+    render();
+  }
 
   const eur = n => n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
   const frDate = d => d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
@@ -352,18 +453,66 @@
     const addr   = document.getElementById('clientAddr').value;
     const ref    = document.getElementById('clientRef').value;
     const tvaNo  = document.getElementById('clientTva').value;
-    const global = parseFloat(document.getElementById('globalHT').value) || 0;
-    const tvaR   = parseFloat(document.getElementById('tvaRate').value) || 0;
     const nbB    = parseInt(document.getElementById('nbBornes').value) || 1;
     const nbC    = parseInt(document.getElementById('nbCameras').value) || 0;
     const num    = document.getElementById('devisNum').value;
     const dEmis  = parseDate(document.getElementById('dateEmis').value);
     const dExp   = parseDate(document.getElementById('dateExp').value);
 
-    // Répartition
-    const tMat   = global * SHARE.mat;
-    const tPlat  = global * SHARE.plat;
-    const tMaint = global * SHARE.maint;
+    let tMat, tPlat, tMaint, global, tvaR;
+
+    if(CURRENT_MODE === 'manual'){
+      // ── Mode montants manuels ──
+      tMat   = parseFloat(document.getElementById('mMat').value)   || 0;
+      tPlat  = parseFloat(document.getElementById('mPlat').value)  || 0;
+      tMaint = parseFloat(document.getElementById('mMaint').value) || 0;
+      tvaR   = parseFloat(document.getElementById('tvaRateM').value) || 0;
+      global = tMat + tPlat + tMaint;
+
+      // Aperçu : montants saisis (pas de %)
+      document.getElementById('splitPreview').innerHTML =
+        `<div class="split-row"><span>Matériel</span><b>${eur(tMat)}</b></div>`+
+        `<div class="split-row"><span>Plateforme</span><b>${eur(tPlat)}</b></div>`+
+        `<div class="split-row"><span>Maintenance</span><b>${eur(tMaint)}</b></div>`+
+        `<div class="split-row" style="border-top:1px solid #e6d9b6;margin-top:4px;padding-top:4px"><span>Total HT</span><b>${eur(global)}</b></div>`+
+        `<div class="split-row"><span>Total TTC</span><b>${eur(global*(1+tvaR/100))}</b></div>`;
+    } else {
+      // ── Mode global + répartition ──
+      global = parseFloat(document.getElementById('globalHT').value) || 0;
+      tvaR   = parseFloat(document.getElementById('tvaRate').value) || 0;
+
+      let pMat   = parseFloat(document.getElementById('pctMat').value);
+      let pPlat  = parseFloat(document.getElementById('pctPlat').value);
+      let pMaint = parseFloat(document.getElementById('pctMaint').value);
+      if(isNaN(pMat))   pMat   = 0;
+      if(isNaN(pPlat))  pPlat  = 0;
+      if(isNaN(pMaint)) pMaint = 0;
+      const pctTotal = pMat + pPlat + pMaint;
+
+      // Alerte si total ≠ 100
+      const warnEl = document.getElementById('pctWarn');
+      const okEl   = document.getElementById('pctOk');
+      if(Math.abs(pctTotal - 100) > 0.01){
+        warnEl.textContent = `Total = ${(+pctTotal.toFixed(2))} % — doit faire 100 %`;
+        warnEl.classList.add('show');
+        okEl.style.display = 'none';
+      } else {
+        warnEl.classList.remove('show');
+        okEl.style.display = '';
+      }
+
+      tMat   = global * pMat/100;
+      tPlat  = global * pPlat/100;
+      tMaint = global * pMaint/100;
+
+      const fmtPct = n => (+n.toFixed(2));
+      document.getElementById('splitPreview').innerHTML =
+        `<div class="split-row"><span>Matériel (${fmtPct(pMat)} %)</span><b>${eur(tMat)}</b></div>`+
+        `<div class="split-row"><span>Plateforme (${fmtPct(pPlat)} %)</span><b>${eur(tPlat)}</b></div>`+
+        `<div class="split-row"><span>Maintenance (${fmtPct(pMaint)} %)</span><b>${eur(tMaint)}</b></div>`+
+        `<div class="split-row" style="border-top:1px solid #e6d9b6;margin-top:4px;padding-top:4px"><span>Total HT</span><b>${eur(global)}</b></div>`+
+        `<div class="split-row"><span>Total TTC</span><b>${eur(global*(1+tvaR/100))}</b></div>`;
+    }
 
     const puMat  = tMat  / nbB;
     const puPlat = tPlat / nbB;
@@ -371,14 +520,6 @@
 
     const tvaMontant = global * tvaR/100;
     const ttc = global + tvaMontant;
-
-    // Aperçu répartition (panneau)
-    document.getElementById('splitPreview').innerHTML =
-      `<div class="split-row"><span>Matériel (40 %)</span><b>${eur(tMat)}</b></div>`+
-      `<div class="split-row"><span>Plateforme (55 %)</span><b>${eur(tPlat)}</b></div>`+
-      `<div class="split-row"><span>Maintenance (5 %)</span><b>${eur(tMaint)}</b></div>`+
-      `<div class="split-row" style="border-top:1px solid #e6d9b6;margin-top:4px;padding-top:4px"><span>Total HT</span><b>${eur(global)}</b></div>`+
-      `<div class="split-row"><span>Total TTC</span><b>${eur(ttc)}</b></div>`;
 
     // Meta
     document.getElementById('o-num').textContent  = num;
