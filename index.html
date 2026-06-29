@@ -121,7 +121,7 @@
   .recap-line{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;}
   .recap-line .lbl{font-weight:600;}
   .recap-ttc{background:var(--cream);font-weight:700;padding:8px 10px;margin-top:4px;display:flex;justify-content:space-between;font-size:12.5px;}
-  .footer-legal{margin-top:46px;font-size:8.5px;color:var(--grey);border-top:1px solid var(--line);padding-top:8px;line-height:1.5;}
+  .footer-legal{margin-top:34px;font-size:8.5px;color:var(--grey);border-top:1px solid var(--line);padding-top:8px;line-height:1.5;text-align:justify;}
   @media print{
     *{
       -webkit-print-color-adjust:exact !important;
@@ -200,6 +200,20 @@
         <label>Nombre de caméras</label>
         <input id="nbCameras" type="number" value="0" min="0">
       </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Nombre de panneaux</label>
+        <input id="nbPanneaux" type="number" value="0" min="0">
+      </div>
+      <div class="field">
+        <label>Durée d'usage (mois)</label>
+        <input id="dureeMois" type="number" value="48" min="1">
+      </div>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;">
+      <input id="optPoste" type="checkbox" checked style="width:auto;margin:0;">
+      <label for="optPoste" style="margin:0;cursor:pointer;">Inclure le poste informatique sécurisé</label>
     </div>
 
     <div class="split-preview" id="splitPreview"></div>
@@ -337,10 +351,11 @@
               <div class="blk-title">Investissement — Dispositif terrain &amp; matériel</div>
               <ul>
                 <li>Acquisition de <span id="o-descBornes"></span> bornes Vizzia V4 et de ses composants techniques intégrés</li>
+                <li>Acquisition de <span id="o-descCams"></span> caméras</li>
+                <li id="o-liPoste">Poste informatique sécurisé dédié à l'exploitation des images de vidéoprotection</li>
+                <li>Fourniture et pose de <span id="o-descPanneaux"></span> panneaux entrées d'agglomérations conforme CNIL</li>
                 <li>Acquisition des éléments de fixation et d'intégration mécanique</li>
                 <li>Pose et intégration mécanique du dispositif sur infrastructure — travaux initiaux de mise en œuvre</li>
-                <li>Acquisition de <span id="o-descCams"></span> caméras</li>
-                <li>Acquisition des panneaux de ville conformes CNIL et RGPD</li>
                 <li>Intégration et qualification technique du dispositif avant remise à la collectivité</li>
                 <li>Contrôle de conformité et validation de l'équipement avant remise</li>
                 <li>Conditionnement, livraison sur site et documentation patrimoniale des équipements immobilisés</li>
@@ -357,9 +372,9 @@
           </tr>
           <tr class="desc">
             <td colspan="5">
-              <div class="blk-title">Investissement — Plateforme &amp; droit d'usage 48 mois</div>
+              <div class="blk-title">Investissement — Plateforme &amp; droit d'usage <span id="o-descDuree1"></span> mois</div>
               <ul>
-                <li>Acquisition du droit d'usage pluriannuel de la plateforme Vizzia — 48 mois</li>
+                <li>Acquisition du droit d'usage pluriannuel de la plateforme Vizzia — <span id="o-descDuree2"></span> mois</li>
                 <li>Mise en service initiale et création de l'environnement d'exploitation — opération non récurrente</li>
                 <li>Paramétrage initial du dispositif et configuration des accès opérateurs — opération unique à la mise en service</li>
                 <li>Configuration technique initiale de la connectivité 4G/5G MtoM — intégrée à la mise en service</li>
@@ -414,7 +429,7 @@
       </div>
 
       <div class="footer-legal">
-        Document fourni à titre d'exemple, à des fins d'illustration uniquement. Il ne constitue ni un devis, ni une offre, ni un engagement contractuel. Les montants indiqués sont donnés à titre indicatif et ne sauraient engager Alphaiota.
+        <strong>Document indicatif et non contractuel.</strong> Le présent document est communiqué à titre purement informatif et illustratif. Il ne constitue pas une offre de contracter au sens des articles 1114 et suivants du Code civil, mais une simple invitation à entrer en pourparlers. Lorsque le destinataire est un acheteur soumis au Code de la commande publique, aucun engagement ne saurait résulter du présent document : tout marché ne peut être conclu que dans le respect des règles de passation applicables et sur décision de l'autorité compétente. Les prestations, quantités et montants y figurant sont donnés à titre d'exemple, sans valeur d'engagement, et ne sauraient lier ALPHAIOTA SAS. Toute proposition commerciale ferme fera l'objet d'un document distinct, daté, nominatif et expressément qualifié d'offre, établi après étude des besoins réels de la collectivité. La transmission, la consultation, l'annotation ou la signature éventuelle du présent document ne forment aucun contrat et n'emportent aucun engagement de l'une ou l'autre des parties.
       </div>
     </div>
   </div>
@@ -557,6 +572,14 @@
     // Descriptifs
     document.getElementById('o-descBornes').textContent = nbB;
     document.getElementById('o-descCams').textContent   = nbC;
+    const nbPan  = parseInt(document.getElementById('nbPanneaux').value) || 0;
+    const duree  = parseInt(document.getElementById('dureeMois').value)  || 0;
+    document.getElementById('o-descPanneaux').textContent = nbPan;
+    document.getElementById('o-descDuree1').textContent   = duree;
+    document.getElementById('o-descDuree2').textContent   = duree;
+    // Ligne poste informatique : affichée seulement si la case est cochée
+    document.getElementById('o-liPoste').style.display =
+      document.getElementById('optPoste').checked ? '' : 'none';
 
     // Détails TVA
     document.getElementById('o-tvaTaux').textContent    = tvaR + '%';
@@ -576,6 +599,7 @@
   // Re-render sur toute saisie
   document.querySelectorAll('input,textarea').forEach(el=>{
     el.addEventListener('input', render);
+    el.addEventListener('change', render);
   });
   render();
 </script>
