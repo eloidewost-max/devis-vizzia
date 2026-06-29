@@ -300,8 +300,8 @@
         <div class="emitter">
           <div class="lbl">Émetteur ou Émettrice</div>
           <div class="orange">Alphaiota</div>
-          51 rue de Turbigo<br>
-          75003 Paris - France<br>
+          8 rue Sainte-Cécile<br>
+          75009 Paris - France<br>
           sales@vizzia.fr<br>
           +33 6 11 74 90 78
         </div>
@@ -353,7 +353,7 @@
                 <li>Acquisition de <span id="o-descBornes"></span> bornes Vizzia V4 et de ses composants techniques intégrés</li>
                 <li>Acquisition de <span id="o-descCams"></span> caméras</li>
                 <li id="o-liPoste">Poste informatique sécurisé dédié à l'exploitation des images de vidéoprotection</li>
-                <li>Fourniture et pose de <span id="o-descPanneaux"></span> panneaux entrées d'agglomérations conforme CNIL</li>
+                <li id="o-liPanneaux"></li>
                 <li>Acquisition des éléments de fixation et d'intégration mécanique</li>
                 <li>Pose et intégration mécanique du dispositif sur infrastructure — travaux initiaux de mise en œuvre</li>
                 <li>Intégration et qualification technique du dispositif avant remise à la collectivité</li>
@@ -574,7 +574,9 @@
     document.getElementById('o-descCams').textContent   = nbC;
     const nbPan  = parseInt(document.getElementById('nbPanneaux').value) || 0;
     const duree  = parseInt(document.getElementById('dureeMois').value)  || 0;
-    document.getElementById('o-descPanneaux').textContent = nbPan;
+    document.getElementById('o-liPanneaux').textContent = nbPan >= 1
+      ? `Fourniture et pose de ${nbPan} panneaux entrées d'agglomérations conforme CNIL`
+      : `Fourniture et pose des panneaux d'entrée d'agglomération conforme CNIL`;
     document.getElementById('o-descDuree1').textContent   = duree;
     document.getElementById('o-descDuree2').textContent   = duree;
     // Ligne poste informatique : affichée seulement si la case est cochée
