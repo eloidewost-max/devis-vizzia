@@ -218,6 +218,12 @@
 
     <div class="split-preview" id="splitPreview"></div>
 
+    <!-- Aide-calcul : ventilation des frais pour la slide (4 ans) -->
+    <div class="split-preview" id="ventilBox">
+      <div style="font-weight:700;color:var(--orange);margin-bottom:6px;">Ventilation des frais — slide (4 ans)</div>
+      <div id="ventilPreview"></div>
+    </div>
+
     <!-- Toggle : répartition des % (mode global uniquement) -->
     <div class="toggle-sec mode-only-global" id="secRepartition">
       <div class="toggle-head" onclick="document.getElementById('secRepartition').classList.toggle('open')">
@@ -241,6 +247,32 @@
         </div>
         <div class="pct-warn" id="pctWarn"></div>
         <div class="pct-ok" id="pctOk" style="display:none">Total = 100 %</div>
+      </div>
+    </div>
+
+    <!-- Toggle : lignes optionnelles du bloc Investissement -->
+    <div class="toggle-sec" id="secOptions">
+      <div class="toggle-head" onclick="document.getElementById('secOptions').classList.toggle('open')">
+        <span>Lignes optionnelles — bloc Investissement</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="toggle-body">
+        <div class="field" style="display:flex;align-items:center;gap:8px;">
+          <input id="optComptage" type="checkbox" style="width:auto;margin:0;">
+          <label for="optComptage" style="margin:0;cursor:pointer;flex:1;">Création de points de comptage et raccordements</label>
+        </div>
+        <div class="field">
+          <label>Nombre de points de comptage</label>
+          <input id="nbComptage" type="number" value="0" min="0">
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+          <input id="optMats" type="checkbox" style="width:auto;margin:0;">
+          <label for="optMats" style="margin:0;cursor:pointer;flex:1;">Fourniture et pose de mâts vidéo-protection</label>
+        </div>
+        <div class="field">
+          <label>Nombre de mâts</label>
+          <input id="nbMats" type="number" value="0" min="0">
+        </div>
       </div>
     </div>
 
@@ -335,6 +367,7 @@
             <th class="num">Prix u. HT</th>
             <th class="num">TVA (%)</th>
             <th class="num">Total HT</th>
+            <th class="num">Total TTC</th>
           </tr>
         </thead>
         <tbody>
@@ -345,15 +378,18 @@
             <td class="num" id="o-pu1"></td>
             <td class="num" id="o-tva1"></td>
             <td class="num" id="o-tot1"></td>
+            <td class="num" id="o-tot1ttc"></td>
           </tr>
           <tr class="desc">
-            <td colspan="5">
+            <td colspan="6">
               <div class="blk-title">Investissement — Dispositif terrain &amp; matériel</div>
               <ul>
                 <li>Acquisition de <span id="o-descBornes"></span> bornes Vizzia V4 et de ses composants techniques intégrés</li>
                 <li>Acquisition de <span id="o-descCams"></span> caméras</li>
                 <li id="o-liPoste">Poste informatique sécurisé dédié à l'exploitation des images de vidéoprotection</li>
                 <li id="o-liPanneaux"></li>
+                <li id="o-liComptage" style="display:none"></li>
+                <li id="o-liMats" style="display:none"></li>
                 <li>Acquisition des éléments de fixation et d'intégration mécanique</li>
                 <li>Pose et intégration mécanique du dispositif sur infrastructure — travaux initiaux de mise en œuvre</li>
                 <li>Intégration et qualification technique du dispositif avant remise à la collectivité</li>
@@ -369,9 +405,10 @@
             <td class="num" id="o-pu2"></td>
             <td class="num" id="o-tva2"></td>
             <td class="num" id="o-tot2"></td>
+            <td class="num" id="o-tot2ttc"></td>
           </tr>
           <tr class="desc">
-            <td colspan="5">
+            <td colspan="6">
               <div class="blk-title">Investissement — Plateforme &amp; droit d'usage <span id="o-descDuree1"></span> mois</div>
               <ul>
                 <li>Acquisition du droit d'usage pluriannuel de la plateforme Vizzia — <span id="o-descDuree2"></span> mois</li>
@@ -390,9 +427,10 @@
             <td class="num" id="o-pu3"></td>
             <td class="num" id="o-tva3"></td>
             <td class="num" id="o-tot3"></td>
+            <td class="num" id="o-tot3ttc"></td>
           </tr>
           <tr class="desc">
-            <td colspan="5">
+            <td colspan="6">
               <div class="blk-title">Fonctionnement - Accompagnement &amp; support</div>
               <ul>
                 <li>Formation initiale des opérateurs à la prise en main de la solution</li>
@@ -529,6 +567,26 @@
         `<div class="split-row"><span>Total TTC</span><b>${eur(global*(1+tvaR/100))}</b></div>`;
     }
 
+    // ── Ventilation des frais pour la slide (4 ans) ──
+    // Version B : Année 1 = Total HT − 3,75 % (= Total HT − 3 × 1,25 %) ; Années 2-4 = 1,25 % chacune
+    // → la somme des 4 lignes retombe exactement sur le Total HT
+    const VENTIL_PCT = 1.25;                         // % du Total HT par an (fonctionnement)
+    const fonctAn    = global * VENTIL_PCT / 100;    // fonctionnement annuel (années 2-4)
+    const invest1    = global - 3 * fonctAn;         // année 1 (investissement) = X − 3,75 % X
+    const sommeVentil= invest1 + 3 * fonctAn;        // somme des 4 lignes
+    const ecart      = sommeVentil - global;         // écart vs Total HT
+    const ecartTxt   = Math.abs(ecart) < 0.005
+      ? `<div class="split-row" style="color:#2e7d32"><span>✓ Somme = Total HT</span><b>${eur(sommeVentil)}</b></div>`
+      : `<div class="split-row" style="color:#b26a00"><span>Somme des 4 lignes</span><b>${eur(sommeVentil)}</b></div>`
+        + `<div class="split-row" style="color:#b26a00;font-size:11px"><span>Écart vs Total HT</span><b>${ecart>0?'+':''}${eur(ecart)}</b></div>`;
+    document.getElementById('ventilPreview').innerHTML =
+      `<div class="split-row"><span>Année 1 — Investissement</span><b>${eur(invest1)} HT</b></div>`+
+      `<div class="split-row"><span>Année 2 — Fonctionnement</span><b>${eur(fonctAn)} HT</b></div>`+
+      `<div class="split-row"><span>Année 3 — Fonctionnement</span><b>${eur(fonctAn)} HT</b></div>`+
+      `<div class="split-row"><span>Année 4 — Fonctionnement</span><b>${eur(fonctAn)} HT</b></div>`+
+      `<div class="split-row" style="border-top:1px solid #e6d9b6;margin-top:4px;padding-top:4px"><span>Total HT (devis)</span><b>${eur(global)}</b></div>`+
+      ecartTxt;
+
     const puMat  = tMat  / nbB;
     const puPlat = tPlat / nbB;
     const puMaint= tMaint; // 1 unité
@@ -554,20 +612,25 @@
     tvaEl.style.display  = tvaNo.trim() ? '' : 'none';
 
     // Lignes
+    const ttcFactor = 1 + tvaR/100;
+
     document.getElementById('o-q1').textContent  = nbB + ' unités';
     document.getElementById('o-pu1').textContent = eur(puMat);
     document.getElementById('o-tva1').textContent= tvaR + '%';
     document.getElementById('o-tot1').textContent= eur(tMat);
+    document.getElementById('o-tot1ttc').textContent= eur(tMat * ttcFactor);
 
     document.getElementById('o-q2').textContent  = nbB + ' unités';
     document.getElementById('o-pu2').textContent = eur(puPlat);
     document.getElementById('o-tva2').textContent= tvaR + '%';
     document.getElementById('o-tot2').textContent= eur(tPlat);
+    document.getElementById('o-tot2ttc').textContent= eur(tPlat * ttcFactor);
 
     document.getElementById('o-q3').textContent  = '1 unité';
     document.getElementById('o-pu3').textContent = eur(puMaint);
     document.getElementById('o-tva3').textContent= tvaR + '%';
     document.getElementById('o-tot3').textContent= eur(tMaint);
+    document.getElementById('o-tot3ttc').textContent= eur(tMaint * ttcFactor);
 
     // Descriptifs
     document.getElementById('o-descBornes').textContent = nbB;
@@ -582,6 +645,23 @@
     // Ligne poste informatique : affichée seulement si la case est cochée
     document.getElementById('o-liPoste').style.display =
       document.getElementById('optPoste').checked ? '' : 'none';
+
+    // Lignes optionnelles du bloc Investissement (affichées si la case est cochée)
+    const optComptage = document.getElementById('optComptage').checked;
+    const nbCpt       = parseInt(document.getElementById('nbComptage').value) || 0;
+    const liCpt       = document.getElementById('o-liComptage');
+    liCpt.style.display = optComptage ? '' : 'none';
+    liCpt.textContent   = nbCpt >= 1
+      ? `Création de ${nbCpt} point${nbCpt > 1 ? 's' : ''} de comptage et raccordement${nbCpt > 1 ? 's' : ''}`
+      : `Création de points de comptage et raccordements`;
+
+    const optMats = document.getElementById('optMats').checked;
+    const nbMat   = parseInt(document.getElementById('nbMats').value) || 0;
+    const liMat   = document.getElementById('o-liMats');
+    liMat.style.display = optMats ? '' : 'none';
+    liMat.textContent   = nbMat >= 1
+      ? `Fourniture et pose de ${nbMat} mât${nbMat > 1 ? 's' : ''} vidéo-protection`
+      : `Fourniture et pose de mâts vidéo-protection`;
 
     // Détails TVA
     document.getElementById('o-tvaTaux').textContent    = tvaR + '%';
